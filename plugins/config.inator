@@ -2,13 +2,13 @@
 newPlugin
 pluginator
 
-[forceRecompile]
+[force_recompile]
 
-[compileList]
+[to_compile]
 newPlugin
 
 [locked]
 pluginator
 
-[ui]
-compilerFlags: -lglfw
+[compile_flags]
+[ui] -lglfw
