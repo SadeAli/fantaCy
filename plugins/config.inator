@@ -1,0 +1,14 @@
+[loaded]
+newPlugin
+pluginator
+
+[forceRecompile]
+
+[compileList]
+newPlugin
+
+[locked]
+pluginator
+
+[ui]
+compilerFlags: -lglfw

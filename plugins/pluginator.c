@@ -1,4 +1,5 @@
 #include "pmc.h"
+#include "cengin.h"
 
 #include <stdio.h>
 #include <dirent.h>
@@ -11,6 +12,9 @@
 #define MAX_FILENAME_LEN 512
 #define MAX_FILE_COUNT 1000
 #define MAX_COMMAND_LENGHT 512
+
+#define HAS_PREFIX(a, b) (strncmp(a, b, sizeof(b) - 1) == 0)
+#define CUT_PREFIX(a, b) (a + sizeof(b) - 1)
 
 typedef char Command[MAX_COMMAND_LENGHT];
 
@@ -48,13 +52,12 @@ int pluginator()
 void loadPlugins()
 {
     // get files inside plugin path
-    printf("getting list of files\n");
     char(*fileList)[MAX_FILE_COUNT][MAX_FILENAME_LEN];
     unsigned int fileCount;
     getFileList(&fileList, &fileCount, pluginPath);
-    printf("list of files generated\n");
 
-    if (fileCount == 0)
+    //
+    if (fileCount <= 2)
     {
         printf("! no plugins found\n");
 
@@ -115,14 +118,14 @@ int processCommand(char *command)
         return SUCCESS;
     }
 
-    if (strncmp(command, "set pluginPath ", 15) == 0)
+    if HAS_PREFIX (command, "set pluginPath ")
     {
-        strcpy(pluginPath, command + 15);
+        strcpy(pluginPath, CUT_PREFIX(command, "set pluginPath "));
         printf("plugin path set to: %s\n", pluginPath);
         return SUCCESS;
     }
 
-    if (strcmp(command, "reload plugins") == 0)
+    if (strcmp(command, "reload") == 0)
     {
         loadPlugins();
         return SUCCESS;
@@ -136,6 +139,32 @@ int processCommand(char *command)
     if (strcmp(command, "recompile") == 0)
     {
         return RECOMPILE;
+    }
+
+    if HAS_PREFIX (command, "enter ")
+    {
+        char *pluginName = CUT_PREFIX(command, "enter ");
+        char pluginBin[MAX_FILENAME_LEN];
+        sprintf(pluginBin, "%s%s.so", pluginBinPath, pluginName);
+
+        void *handle = dlopen(pluginBin, RTLD_LAZY);
+        if (handle == NULL)
+        {
+            printf("failed to load %s\n", pluginName);
+            return FAILURE;
+        }
+
+        void (*entryFunction)() = dlsym(handle, ENTRY_NAME);
+        if (!entryFunction)
+        {
+            printf("error while loading entryFunction(): %s", dlerror());
+            dlclose(handle);
+            return FAILURE;
+        }
+
+        entryFunction();
+        dlclose(handle);
+        return SUCCESS;
     }
 
     printf("\n! unknown command: %s\n\n", command);
