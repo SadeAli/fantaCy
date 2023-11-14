@@ -3,5 +3,6 @@
 
 ENTRY_FUNCTION
 {
-    printf("hello from kemal\n");
+    printf("hello from kemal\n"
+           "yusufi\n");
 }

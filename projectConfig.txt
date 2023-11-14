@@ -1,0 +1,5 @@
+sadsafsadas
+
+[harmless.compileFlags] -lglfw -asdasd -asd -asdasf
+
+adsfdfsd

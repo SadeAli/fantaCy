@@ -10,7 +10,7 @@
 #include <dlfcn.h>
 
 #define MAX_FILENAME_LEN 512
-#define MAX_FILE_COUNT 1000
+#define MAX_FILE_COUNT 512
 #define MAX_COMMAND_LENGHT 512
 
 #define HAS_PREFIX(a, b) (strncmp(a, b, sizeof(b) - 1) == 0)
@@ -31,7 +31,7 @@ Command command;
 int pluginator()
 {
     printf("\n< pluginator >\n\n");
-
+    
     // load plugins if there are any
     printf("loading plugins\n");
     loadPlugins();
@@ -56,7 +56,6 @@ void loadPlugins()
     unsigned int fileCount;
     getFileList(&fileList, &fileCount, pluginPath);
 
-    //
     if (fileCount <= 2)
     {
         printf("! no plugins found\n");
@@ -90,18 +89,54 @@ void loadPlugins()
 
 void compile(const char *cFile)
 {
-    const char *dlExtension = "so";
-
+    // set output name
     char outputFile[MAX_FILENAME_LEN];
     strcpy(outputFile, cFile);
-
+    // set output extension
     const unsigned int filenameLen = strlen(cFile);
-    strncpy(outputFile + filenameLen - 1, dlExtension, 3);
+    strncpy(outputFile + filenameLen - 1, "so", sizeof("so"));
 
-    sprintf(command, "gcc -fPIC --shared -o %s%s %s%s", pluginBinPath, outputFile, pluginPath, cFile);
+    // open config file
+    FILE *fp;
+    fp = fopen("plugins/config.inator", "r");
+    if (fp == NULL)
+    {
+        printf("error opening file\n");
+        exit(1);
+    }
+
+    sprintf(command, "gcc -fPIC --shared -o %s%s %s%s ", pluginBinPath, outputFile, pluginPath, cFile);
+    // buffer stores lines from the config file
+    char buffer[512];
+    // goto start of file
+    fseek(fp, 0, SEEK_SET);
+    // read file line by line
+    // fgets returns NULL if eof
+    while (fgets(buffer, sizeof(buffer), fp))
+    {
+        // remove '\n' from config line which is read by fgets
+        buffer[strlen(buffer)] = '\0';
+
+        char token[MAX_FILENAME_LEN + sizeof("[.compileFlags]")];
+        sprintf(token, "[%s.compileFlags]", cFile);
+
+        // set token
+        char *compilerFlags;
+        // if line has token remove token get link flags
+        if (strncmp(buffer, token, strlen(cFile)) == 0)
+        {
+            compilerFlags = buffer + strlen(token) - 1;
+            printf("%s\n", compilerFlags);
+            strcat(command, compilerFlags);
+            printf("%s\n", command);
+        }
+    }
 
     // send command to operating system
     system(command);
+
+    // close file
+    fclose(fp);
 }
 
 void getUserCommand(Command command)
@@ -143,10 +178,12 @@ int processCommand(char *command)
 
     if HAS_PREFIX (command, "enter ")
     {
+        // get so path
         char *pluginName = CUT_PREFIX(command, "enter ");
         char pluginBin[MAX_FILENAME_LEN];
         sprintf(pluginBin, "%s%s.so", pluginBinPath, pluginName);
 
+        // open plugin
         void *handle = dlopen(pluginBin, RTLD_LAZY);
         if (handle == NULL)
         {
@@ -154,6 +191,7 @@ int processCommand(char *command)
             return FAILURE;
         }
 
+        // get entry
         void (*entryFunction)() = dlsym(handle, ENTRY_NAME);
         if (!entryFunction)
         {
@@ -162,7 +200,9 @@ int processCommand(char *command)
             return FAILURE;
         }
 
+        // call entry
         entryFunction();
+        // close plugin
         dlclose(handle);
         return SUCCESS;
     }
