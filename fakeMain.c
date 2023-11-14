@@ -70,7 +70,7 @@ void compile()
 {
     isCompiled = 0;
     printf("\n\ncompiling pluginator...\n");
-    const int result = system("gcc -fPIC --shared -o plugins/compiledPlugins/" REALMAIN_NAME ".so plugins/" REALMAIN_NAME ".c");
+    const int result = system("cc -fPIC --shared -o plugins/compiledPlugins/" REALMAIN_NAME ".so plugins/" REALMAIN_NAME ".c");
     if (result == 0)
     {
         load();

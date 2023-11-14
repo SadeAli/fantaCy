@@ -1,14 +1,1 @@
-[loaded]
-newPlugin
-pluginator
-
-[force_recompile]
-
-[to_compile]
-newPlugin
-
-[locked]
-pluginator
-
-[compile_flags]
-[ui] -lglfw
+[ui.compileFlags] -lglfw

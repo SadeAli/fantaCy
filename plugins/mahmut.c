@@ -1,11 +1,10 @@
 #include "cengin.h"
 #include <stdio.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 ENTRY_FUNCTION
 {
-    intptr_t a;
-    sizeof(long long int);
-    printf("my name is mahmut\n");
-    printf("yusuf da burda\n");
+    printf("my name is mahmut\n"
+            " and i like pasta\n");
 }
